@@ -1,0 +1,150 @@
+<!doctype html>
+<!--
+  ~ Author: Damian Schwyrz <mail@damianschwyrz.de>
+  ~ URL: https://www.damianschwyrz.de
+  ~ Copyright (c) 2017.
+  -->
+
+<html lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+    <link rel="stylesheet" href="assets/css/css.css">
+</head>
+<body>
+
+<div id="root">
+    <table-keywords></table-keywords>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.8/vue.js"></script>
+<!--<script src="assets/js/vue/app1.js"></script>-->
+<script>
+    /*
+ * Author: Damian Schwyrz <mail@damianschwyrz.de>
+ * URL: https://www.damianschwyrz.de
+ * Copyright (c) 2017.
+ */
+    /**
+     * Main table component
+     */
+    Vue.component('table-keywords', {
+        data() {
+            return {
+                posts: [],
+                search: '',
+                sortKey: 'id',
+                sortOrder: 'asc',
+            }
+        },
+        template:
+            `
+        <div class="container">
+            <div class="search">
+                Search: <input type="text" v-model="search">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><a @click="sortBy('id')" href="#">ID</a></th>
+                        <th><a @click="sortBy('userId')" href="#">userID</a></th>
+                        <th><a @click="sortBy('title')" href="#">title</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <table-row v-for="post in filteredPosts" :key="post.id" :post="post"></table-row>
+                </tbody>
+            </table>
+        </div>
+    `,
+        created() {
+            /**
+             * Get 100 random lorem ipsum posts...
+             */
+            axios.get('https://jsonplaceholder.typicode.com/posts')
+                .then(response => {
+                    this.posts = response.data;
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        },
+        computed: {
+            /**
+             * Return a subset of posts by searchquery and a given key and its sortorder.
+             *
+             * @returns {Array.<T>|*}
+             */
+            filteredPosts() {
+                // Original posts.
+                posts = this.posts;
+                // Current sort key
+                sortKey = this.sortKey;
+                // Current sort order
+                sortOrder = (this.sortOrder == "asc" ? 1 : -1);
+                // Sort posts
+                posts = posts.sort((a, b) => {
+                    left = a[sortKey];
+                    right = b[sortKey];
+                    if (left > right) return sortOrder * 1;
+                    if (left < right) return sortOrder * (-1);
+                    return 0;
+                });
+                // Search sorted list of posts.
+                return posts.filter(post => {
+                    currentPostsId = post.id;
+                    currentPostsUserId = post.userId;
+                    currentPostsTitle = post.title.toLowerCase();
+                    currentSearchQuery = this.search.toLowerCase();
+                    result = (
+                        currentPostsTitle.indexOf(currentSearchQuery) > -1 ||
+                        currentPostsId == currentSearchQuery ||
+                        currentPostsUserId == currentSearchQuery
+                    );
+                    return result;
+                });
+            }
+        },
+        methods: {
+            /**
+             * Set the sort key and a default sort order.
+             * @param key
+             */
+            sortBy(key) {
+                this.sortKey = key;
+                if (this.sortOrder == "asc") {
+                    this.sortOrder = "desc";
+                } else {
+                    this.sortOrder = "asc";
+                }
+            }
+        }
+    });
+    /**
+     * table row component
+     */
+    Vue.component('table-row', {
+        props: ['post'],
+        template:
+            `
+        <tr>
+            <td>{{ post.id }}</td>
+            <td>{{ post.userId }}</td>
+            <td>{{ post.title }}</td>
+        </tr>
+        `
+    });
+    /**
+     * Init
+     */
+    keyword_table_vue = new Vue({
+        el: '#root',
+    });
+</script>
+
+</body>
+</html>
